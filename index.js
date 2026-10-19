@@ -195,7 +195,7 @@ program
   })
   .configureOutput({ outputError: () => {} }) // англійські повідомлення commander не показуємо
   .exitOverride() // замість process.exit commander кидає виняток, який ми обробимо самі
-  .option('-f, --file <path>', 'шлях до JSON-файлу з каталогом', DEFAULT_FILE);
+  .requiredOption('-f, --file <path>', 'шлях до JSON-файлу з каталогом', DEFAULT_FILE);
 
 const loadRoot = () => loadCatalog(program.opts().file);
 
