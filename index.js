@@ -21,7 +21,20 @@ const isObject = (value) =>
 const isFolder = (node) => 'Object' in node; // у папки є ключ Object (може бути null)
 const joinPath = (parent, name) => (parent ? `${parent}/${name}` : name);
 const kindOf = (node) => (isFolder(node) ? 'папка' : 'файл');
+const isHidden = (node) => node.hidden === true;
 const showPath = (path) => path || '/';
+
+// Розмір у зручному вигляді: 2457600 -> "2.34 МіБ".
+function formatSize(bytes) {
+  const units = ['Б', 'КіБ', 'МіБ', 'ГіБ'];
+  let value = bytes;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  return `${unit === 0 ? value : value.toFixed(2)} ${units[unit]}`;
+}
 
 function loadCatalog(filePath) {
   let text;
@@ -63,12 +76,14 @@ function childrenOf(folder, folderPath) {
   return entries;
 }
 
-// Обхід усього дерева вглиб; для кожного елемента віддає назву, шлях і сам елемент.
-function* walk(folder, folderPath = '') {
+// Обхід усього дерева вглиб; для кожного елемента віддає назву, шлях, сам елемент
+// і ознаку "прихований" (власну або успадковану від прихованої папки).
+function* walk(folder, folderPath = '', parentHidden = false) {
   for (const [name, node] of childrenOf(folder, folderPath)) {
     const path = joinPath(folderPath, name);
-    yield { name, path, node };
-    if (isFolder(node)) yield* walk(node, path);
+    const hidden = parentHidden || isHidden(node);
+    yield { name, path, node, hidden };
+    if (isFolder(node)) yield* walk(node, path, hidden);
   }
 }
 
@@ -119,6 +134,22 @@ function getField(element, elementPath, fieldText) {
   return value;
 }
 
+// Сума розмірів усіх файлів папки разом із вкладеними; для файлу — його розмір.
+function totalSize(node, path, skipHidden) {
+  if (!isFolder(node)) {
+    if (!Number.isFinite(node.size) || node.size < 0) {
+      throw new CliError(`У файлі "${path}" немає коректного числового поля size.`);
+    }
+    return node.size;
+  }
+  let sum = 0;
+  for (const [name, child] of childrenOf(node, path)) {
+    if (skipHidden && isHidden(child)) continue; // прихована папка пропускається разом із вмістом
+    sum += totalSize(child, joinPath(path, name), skipHidden);
+  }
+  return sum;
+}
+
 // ---------- Перевірка значень опцій ----------
 
 function parsePositiveInt(value) {
@@ -127,6 +158,13 @@ function parsePositiveInt(value) {
     throw new CliError(`Опція --limit очікує додатне ціле число, а отримано "${value}".`, EXIT_USAGE);
   }
   return number;
+}
+
+function parseKind(value) {
+  if (value !== 'file' && value !== 'folder') {
+    throw new CliError(`Опція --type приймає "file" або "folder", а отримано "${value}".`, EXIT_USAGE);
+  }
+  return value;
 }
 
 // ---------- Опис програми та глобальна опція ----------
@@ -195,6 +233,75 @@ program
     console.log(JSON.stringify(getField(node, path, fieldText), null, 2));
   });
 
+// ---------- Можливості варіанта 3: каталог на диску ----------
+
+program
+  .command('ls')
+  .description('вміст папки (один рівень); приховані елементи — за опцією -a')
+  .argument('[folder]', 'шлях до папки; без аргументу — коренева папка')
+  .option('-a, --all', 'показувати також приховані елементи')
+  .action((folderText = '', options) => {
+    const { node, path } = findNode(loadRoot(), folderText);
+    if (!isFolder(node)) throw new CliError(`"${path}" — це файл, а не папка.`);
+
+    const entries = childrenOf(node, path);
+    const visible = options.all ? entries : entries.filter(([, child]) => !isHidden(child));
+    const width = Math.max(0, ...visible.map(([name]) => name.length));
+
+    console.log(`Вміст ${path ? `папки "${path}"` : 'кореневої папки'}:`);
+    for (const [name, child] of visible) {
+      const info = isFolder(child)
+        ? `елементів: ${childrenOf(child, joinPath(path, name)).length}`
+        : Number.isFinite(child.size) ? formatSize(child.size) : 'розмір невідомий';
+      const mark = isHidden(child) ? '  [прихований]' : '';
+      console.log(`  ${kindOf(child).padEnd(5)}  ${name.padEnd(width)}  ${info}${mark}`);
+    }
+    if (visible.length === 0) console.log('  (порожньо)');
+
+    const hiddenCount = entries.length - visible.length;
+    if (hiddenCount > 0) console.log(`Приховано елементів: ${hiddenCount} (опція -a покаже їх).`);
+  });
+
+program
+  .command('size')
+  .description('сумарний розмір папки з урахуванням вкладених елементів')
+  .argument('[path]', 'шлях до папки; без аргументу — коренева папка')
+  .option('--exclude-hidden', 'не враховувати приховані елементи')
+  .action((pathText = '', options) => {
+    const { node, path } = findNode(loadRoot(), pathText);
+    const bytes = totalSize(node, path, options.excludeHidden === true);
+    const label = !isFolder(node) ? `файлу "${path}"` : path ? `папки "${path}"` : 'кореневої папки';
+    const note = options.excludeHidden ? ', без прихованих' : '';
+    console.log(`Розмір ${label}: ${bytes} байт (${formatSize(bytes)})${note}`);
+  });
+
+program
+  .command('find')
+  .description('пошук файлів і папок за назвою в усьому дереві')
+  .argument('<name>', 'частина назви (регістр не враховується)')
+  .option('-e, --exact', 'шукати лише повний збіг назви')
+  .option('-t, --type <kind>', 'шукати лише "file" або "folder"', parseKind)
+  .action((query, options) => {
+    const needle = query.trim().toLowerCase();
+    if (needle === '') throw new CliError('Назва для пошуку порожня.', EXIT_USAGE);
+
+    const matches = [...walk(loadRoot())].filter(({ name, node }) => {
+      const lower = name.toLowerCase();
+      const nameMatches = options.exact ? lower === needle : lower.includes(needle);
+      const typeMatches = !options.type || options.type === (isFolder(node) ? 'folder' : 'file');
+      return nameMatches && typeMatches;
+    });
+
+    if (matches.length === 0) {
+      console.log(`Нічого не знайдено за запитом "${query}".`);
+      return;
+    }
+    for (const { path, node, hidden } of matches) {
+      console.log(`${kindOf(node).padEnd(5)}  ${path}${hidden ? '  [прихований]' : ''}`);
+    }
+    console.log(`Знайдено: ${matches.length}.`);
+  });
+
 // ---------- Обробка помилок і запуск ----------
 
 function translateCommanderError(err) {
@@ -223,7 +330,8 @@ function handleError(err) {
   }
   if (err instanceof CommanderError) {
     if (err.code === 'commander.helpDisplayed' || err.code === 'commander.version') return 0;
-    if (err.code === 'commander.help') return EXIT_USAGE; // команду не вказано, довідку вже виведено
+    // "help <команда>" завершується кодом 0, а запуск без команди — помилкою виклику
+    if (err.code === 'commander.help') return err.exitCode === 0 ? 0 : EXIT_USAGE;
     console.error(`Помилка: ${translateCommanderError(err)}`);
     console.error('Подивитися довідку: node index.js --help');
     return EXIT_USAGE;
