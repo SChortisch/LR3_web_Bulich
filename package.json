@@ -17,5 +17,8 @@
   "bugs": {
     "url": "https://github.com/SChortisch/LR3_web_Bulich/issues"
   },
-  "homepage": "https://github.com/SChortisch/LR3_web_Bulich#readme"
+  "homepage": "https://github.com/SChortisch/LR3_web_Bulich#readme",
+  "dependencies": {
+    "commander": "^15.0.0"
+  }
 }
