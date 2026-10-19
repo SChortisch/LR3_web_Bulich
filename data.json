@@ -1,0 +1,119 @@
+{
+  "root_folder_metadata": {
+    "type": "root_folder",
+    "CreatedAt": "2007-10-05",
+    "name": "pictures",
+    "object_count": 3,
+    "Object": {
+      "summer_2007": {
+        "type": "folder",
+        "CreatedAt": "2007-12-08",
+        "name": "summer_2007",
+        "hidden": false,
+        "object_count": 3,
+        "Object": {
+          "picture1.jpg": {
+            "type": "image",
+            "CreatedAt": "2007-12-08",
+            "name": "picture1.jpg",
+            "size": 2457600,
+            "hidden": false,
+            "content": "file"
+          },
+          "picture2.jpg": {
+            "type": "image",
+            "CreatedAt": "2007-12-08",
+            "name": "picture2.jpg",
+            "size": 3145728,
+            "hidden": false,
+            "content": "file"
+          },
+          ".thumbs.db": {
+            "type": "database",
+            "CreatedAt": "2007-12-08",
+            "name": ".thumbs.db",
+            "size": 20480,
+            "hidden": true,
+            "content": "file"
+          }
+        }
+      },
+      "summer_2008": {
+        "type": "folder",
+        "CreatedAt": "2008-11-06",
+        "name": "summer_2008",
+        "hidden": false,
+        "object_count": 2,
+        "Object": {
+          "picture1.jpg": {
+            "type": "image",
+            "CreatedAt": "2008-11-06",
+            "name": "picture1.jpg",
+            "size": 1887436,
+            "hidden": false,
+            "content": "file"
+          },
+          "raw": {
+            "type": "folder",
+            "CreatedAt": "2008-11-06",
+            "name": "raw",
+            "hidden": false,
+            "object_count": 0,
+            "Object": null
+          }
+        }
+      },
+      "Azov_2011": {
+        "type": "folder",
+        "CreatedAt": "2011-08-09",
+        "name": "Azov_2011",
+        "hidden": false,
+        "object_count": 3,
+        "Object": {
+          "readme.txt": {
+            "type": "text",
+            "CreatedAt": "2011-08-09",
+            "name": "readme.txt",
+            "size": 1536,
+            "hidden": false,
+            "content": "file"
+          },
+          "best": {
+            "type": "folder",
+            "CreatedAt": "2011-08-10",
+            "name": "best",
+            "hidden": false,
+            "object_count": 1,
+            "Object": {
+              "sunset.jpg": {
+                "type": "image",
+                "CreatedAt": "2011-08-10",
+                "name": "sunset.jpg",
+                "size": 4194304,
+                "hidden": false,
+                "content": "file"
+              }
+            }
+          },
+          ".private": {
+            "type": "folder",
+            "CreatedAt": "2011-08-11",
+            "name": ".private",
+            "hidden": true,
+            "object_count": 1,
+            "Object": {
+              "notes.txt": {
+                "type": "text",
+                "CreatedAt": "2011-08-11",
+                "name": "notes.txt",
+                "size": 2048,
+                "hidden": false,
+                "content": "file"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

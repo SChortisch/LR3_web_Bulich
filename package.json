@@ -1,19 +1,22 @@
 {
   "name": "lr3_web_bulich",
   "version": "1.0.0",
-  "description": "",
+  "description": "Консольна програма для перегляду каталогу на диску, описаного у JSON-файлі",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/SChortisch/LR3_web_Bulich.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "Ярослав Буліч",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "bugs": {
     "url": "https://github.com/SChortisch/LR3_web_Bulich/issues"
   },
